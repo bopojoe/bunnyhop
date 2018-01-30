@@ -29,12 +29,14 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
         public void render() {
             renderTestObjects();
         }
-
+        
+        
         private void renderTestObjects() {
+            worldController.cameraHelper.applyTo(camera);
             batch.setProjectionMatrix(camera.combined);
             batch.begin();
-            for (Sprite sprite : worldController.testSprites) {
-                sprite.draw(batch);
+            for(Sprite sprite : worldController.testSprites) {
+              sprite.draw(batch);
             }
             batch.end();
         }

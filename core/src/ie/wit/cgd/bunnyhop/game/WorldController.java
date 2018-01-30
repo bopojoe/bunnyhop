@@ -1,6 +1,9 @@
 package ie.wit.cgd.bunnyhop.game;
 
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
+import ie.wit.cgd.bunnyhop.util.CameraHelper;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -16,6 +19,7 @@ public class WorldController extends InputAdapter {
 
     public Sprite[]             testSprites;
     public int                  selectedSprite;
+    public CameraHelper         cameraHelper;
 
 
     public WorldController() {
@@ -25,6 +29,7 @@ public class WorldController extends InputAdapter {
 
     private void init() {
         Gdx.input.setInputProcessor(this);
+        cameraHelper = new CameraHelper();
         initTestObjects();
     }
 
@@ -34,17 +39,15 @@ public class WorldController extends InputAdapter {
         // Create new array for 5 sprites
         testSprites = new Sprite[5];
 
-        // Create empty POT-sized Pixmap with 8 bit RGBA pixel data
-        int width = 32;
-        int height = 32;
-        Pixmap pixmap = createProceduralPixmap(width, height);
+        // Create a list of texture regions
+        Array<TextureRegion> regions = new Array<TextureRegion>();
+        regions.add(Assets.instance.bunny.head);
+        regions.add(Assets.instance.feather.feather);
+        regions.add(Assets.instance.goldCoin.goldCoin);
 
-        // Create a new texture from pixmap data
-        Texture texture = new Texture(pixmap);
-
-        // Create new sprites using the just created texture
+        // Create new sprites using a random texture region
         for (int i = 0; i < testSprites.length; i++) {
-            Sprite spr = new Sprite(texture);
+            Sprite spr = new Sprite(regions.random());
 
             // Define sprite size to be 1m x 1m in game world
             spr.setSize(1, 1);
@@ -87,10 +90,10 @@ public class WorldController extends InputAdapter {
 
 
     public void update(float deltaTime) {
-        updateTestObjects(deltaTime);
         handleDebugInput(deltaTime);
+        cameraHelper.update(deltaTime);
+        updateTestObjects(deltaTime);
     }
-
 
     private void updateTestObjects(float deltaTime) {
 
@@ -126,13 +129,22 @@ public class WorldController extends InputAdapter {
     @Override
     public boolean keyUp(int keycode) {
 
-        if (keycode == Keys.R) {                                // Reset game world
+        if (keycode == Keys.R) { // Reset game world
             init();
             Gdx.app.debug(TAG, "Game world resetted");
 
-        } else if (keycode == Keys.SPACE) {                     // Select next sprite
+        } else if (keycode == Keys.SPACE) { // Select next sprite
             selectedSprite = (selectedSprite + 1) % testSprites.length;
+
+            // Update camera's target to follow the currently selected sprite
+            if (cameraHelper.hasTarget()) {
+                cameraHelper.setTarget(testSprites[selectedSprite]);
+            }
             Gdx.app.debug(TAG, "Sprite #" + selectedSprite + " selected");
+
+        } else if (keycode == Keys.ENTER) { // Toggle camera follow
+            cameraHelper.setTarget(cameraHelper.hasTarget() ? null : testSprites[selectedSprite]);
+            Gdx.app.debug(TAG, "Camera follow enabled: " + cameraHelper.hasTarget());
         }
 
         return false;
